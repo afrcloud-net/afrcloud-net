@@ -1,6 +1,5 @@
 name: Deploy Pages and Worker
 
-# Hanya berjalan jika trigger manual
 on:
   workflow_dispatch:
     inputs:
@@ -12,6 +11,10 @@ on:
         description: 'Cloudflare Account ID'
         required: true
         type: string
+      CF_PROJECT_NAME:
+        description: 'Cloudflare Pages Project Name'
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -21,18 +24,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Deploy Cloudflare Pages
+      # Step 1: Deploy Cloudflare Pages (Frontend)
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@1
         with:
           apiToken: ${{ github.event.inputs.CF_API_TOKEN }}
           accountId: ${{ github.event.inputs.CF_ACCOUNT_ID }}
-          projectName: your-pages-project-name  # ganti sesuai project Pages-mu
+          projectName: ${{ github.event.inputs.CF_PROJECT_NAME }}  # Ganti dengan input project name dari user
           directory: public
           branch: main
           wranglerVersion: '3'
+        continue-on-error: false  # Gagal langsung berhenti, jika diperlukan bisa disesuaikan
 
-      # Deploy Cloudflare Worker
+      # Step 2: Deploy Cloudflare Worker (Backend)
       - name: Deploy to Cloudflare Worker
         run: |
           cd worker
@@ -40,3 +44,4 @@ jobs:
           npx wrangler deploy --env production
         env:
           CF_API_TOKEN: ${{ github.event.inputs.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ github.event.inputs.CF_ACCOUNT_ID }}
