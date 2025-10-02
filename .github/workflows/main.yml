@@ -1,0 +1,42 @@
+name: Deploy Pages and Worker
+
+# Hanya berjalan jika trigger manual
+on:
+  workflow_dispatch:
+    inputs:
+      CF_API_TOKEN:
+        description: 'Cloudflare API Token'
+        required: true
+        type: string
+      CF_ACCOUNT_ID:
+        description: 'Cloudflare Account ID'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Deploy Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ github.event.inputs.CF_API_TOKEN }}
+          accountId: ${{ github.event.inputs.CF_ACCOUNT_ID }}
+          projectName: your-pages-project-name  # ganti sesuai project Pages-mu
+          directory: public
+          branch: main
+          wranglerVersion: '3'
+
+      # Deploy Cloudflare Worker
+      - name: Deploy to Cloudflare Worker
+        run: |
+          cd worker
+          npm install
+          npx wrangler deploy --env production
+        env:
+          CF_API_TOKEN: ${{ github.event.inputs.CF_API_TOKEN }}
